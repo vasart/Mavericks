@@ -2,13 +2,14 @@ package com.mavericks.bot;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.mavericks.bot.ArduinoBot.BotReply;
+import com.mavericks.bot.BotCommander.BotReply;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -24,19 +25,25 @@ public class MainActivity extends Activity implements TextWatcher {
     private final static int BACK_LEFT = 'e';
     private final static int STOP_MOVING = 's';
 
-    private String mIpAddress = "192.168.1.123";
+    private String mIpAddress = "192.168.1.133";
     private static final String IP_ADDR_PATTERN = 
             "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
             "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
             "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
             "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
 
-    private ArduinoBot mLastMessage = null;
+    //private BotCommander mBotCommander;
+    private final Handler mHandler = new Handler();
 
     private BotReply mReplyHandler = new BotReply() {
         @Override
-        public void receiveReply(int c) {
-            mStatus.setText(getReply(c));
+        public void receiveReply(final int c) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    mStatus.setText(getReply(c));
+                }
+            });
         }
     };
 
@@ -81,11 +88,20 @@ public class MainActivity extends Activity implements TextWatcher {
     }
 
     private void sendMessage(final String address, final int message) {
+        /*
         if (mLastMessage != null && !mLastMessage.isCancelled()) {
             mLastMessage.cancel(true);
         }
         mLastMessage = new ArduinoBot(address, message, mReplyHandler);
         mLastMessage.execute();
+        */
+        new BotCommander(address, message, mReplyHandler).start();
+        //new BotCommander(address, message, mReplyHandler);
+        //new BotCommander(address, message, mReplyHandler);
+        //new BotCommander(address, message, mReplyHandler);
+        //new BotCommander(address, message, mReplyHandler);
+        //mBotCommander.setCommand(message);
+        //if (!mBotCommander.isAlive()) mBotCommander.start();
 
         mStatus.setText(getStatus(message));
     }
@@ -120,20 +136,14 @@ public class MainActivity extends Activity implements TextWatcher {
         return "";
     }
 
-    public static boolean validate(final String ip) {
-          final Pattern pattern = Pattern.compile(IP_ADDR_PATTERN);
-          final Matcher matcher = pattern.matcher(ip);
-          return matcher.matches();
-    }
-
     @Override
     public void afterTextChanged(Editable s) {
         mIpAddress = s.toString();
         if (!validate(mIpAddress)) {
             mAddress.setError(getString(R.string.ip_error));
-            return;
         } else {
             mAddress.setError(null);
+            //mBotCommander.setAddress(mIpAddress);
         }
     }
 
@@ -142,4 +152,10 @@ public class MainActivity extends Activity implements TextWatcher {
 
     @Override
     public void onTextChanged(CharSequence s, int start, int before, int count) {}
+    
+    public static boolean validate(final String ip) {
+        final Pattern pattern = Pattern.compile(IP_ADDR_PATTERN);
+        final Matcher matcher = pattern.matcher(ip);
+        return matcher.matches();
+  }
 }
